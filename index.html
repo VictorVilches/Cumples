@@ -34,11 +34,9 @@
       margin-bottom: 6px;
     }
 
-    /* ── Fecha ── */
     .date-row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
     .date-box .val { font-weight: 700; font-size: 0.95rem; text-transform: capitalize; }
 
-    /* ── Próximo cumple ── */
     .next-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
     .cake { font-size: 2.8rem; }
     .bday-name { font-size: 1.5rem; font-weight: 900; color: #fbd38d; }
@@ -55,7 +53,6 @@
     .days-num { font-size: 2rem; font-weight: 900; line-height: 1; }
     .days-lbl { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; opacity: .85; }
 
-    /* ── Lista todos ── */
     .all-list { margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; }
     .all-row {
       display: flex;
@@ -65,10 +62,8 @@
       border-bottom: 1px solid rgba(255,255,255,0.05);
     }
     .all-row:last-child { border-bottom: none; }
-    .all-row.first span:first-child { color: #fbd38d; }
     .all-row .right { color: #90cdf4; }
 
-    /* ── Selector ── */
     select {
       width: 100%; margin-top: 10px; padding: 11px 14px;
       border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
@@ -76,7 +71,6 @@
     }
     select option { background: #1a1a2e; }
 
-    /* ── Panel deuda ── */
     .debt-header { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 14px; }
     .debt-name { font-size: 1.1rem; font-weight: 800; color: #fbd38d; }
 
@@ -109,28 +103,26 @@
     .footer { text-align: center; color: #4a5568; font-size: 0.72rem; margin-top: 4px; }
     .footer a { color: #90cdf4; text-decoration: none; }
 
-    .demo-banner {
-      background: rgba(246,173,85,0.15);
-      border: 1px solid rgba(246,173,85,0.3);
+    .error-banner {
+      background: rgba(252,129,129,0.15);
+      border: 1px solid rgba(252,129,129,0.3);
       border-radius: 10px;
       padding: 8px 14px;
       font-size: 0.78rem;
-      color: #fbd38d;
+      color: #feb2b2;
       text-align: center;
       margin-bottom: 18px;
+      display: none;
     }
   </style>
 </head>
 <body>
 
-<h1>🎂 🐄 Cumpleaños</h1>
+<h1>🐄 Cumpleaños</h1>
 <p class="subtitle">Gestión de cuotas del grupo</p>
 
-<div class="demo-banner" id="demo-banner">
-  ⚡ Modo demo — Reemplaza <code>SHEET_CSV_URL</code> con tu Google Sheets para datos reales
-</div>
+<div class="error-banner" id="error-banner"></div>
 
-<!-- Fecha actual -->
 <div class="card">
   <div class="date-row">
     <div class="date-box">
@@ -140,7 +132,6 @@
   </div>
 </div>
 
-<!-- Próximo cumpleaños -->
 <div class="card">
   <div class="lbl">🎉 Próximo cumpleaños</div>
   <div class="next-wrap">
@@ -160,7 +151,6 @@
   </div>
 </div>
 
-<!-- Selector de persona -->
 <div class="card">
   <div class="lbl">👤 Ver deuda por persona</div>
   <select id="sel" onchange="renderDebt()">
@@ -172,32 +162,12 @@
 </div>
 
 <p class="footer">
-  Datos desde <a href="#" id="sheet-link" target="_blank">Google Sheets</a> ·
-  Se actualiza en cada visita
+  2026 diseño por <a href="https://victorv.pro/" target="_blank">victorv.pro</a>
 </p>
 
 <script>
-// ================================================================
-//  ⚙️  CONFIGURACIÓN
-//  1. Publica tu Google Sheet: Archivo → Publicar en la web → CSV
-//  2. Pega la URL aquí:
-// ================================================================
 const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5FU6ZSIhT37leJHmXfJsjki6afwpoz4rq4umZ9qjmk_lsb85n0jaJzdxH0JJZuptVw19tpYpI1TeL/pub?gid=0&single=true&output=csv";
-// Ejemplo:
-// const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/ABCDEF123/pub?output=csv";
-
-// ================================================================
-//  Estructura esperada del CSV (primera fila = encabezados):
-//
-//  apodo | fc | ene | feb | mar | abr | may | jun | jul | ago | sep | oct | nov | dic
-//
-//  - apodo   : nombre o apodo del participante
-//  - fc      : fecha de cumpleaños en formato DD/MM  (ej: 15/03)
-//  - ene~dic : estado del mes → "pagado" | "pendiente" | (vacío)
-//              vacío significa que ese mes no hubo cumpleaños (no se cobra)
-// ================================================================
-
-const CUOTA = 5000; // CLP por cada cumpleaños del mes
+const CUOTA = 5000;
 
 const MESES   = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 const MESES_N = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio",
@@ -206,11 +176,9 @@ const MESES_N = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio",
 let participantes = [];
 const hoy = new Date();
 
-// ── Fecha actual ──────────────────────────────────────────────
 document.getElementById("today").textContent =
   hoy.toLocaleDateString("es-CL", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
 
-// ── Parsear una línea CSV respetando comillas ─────────────────
 function parseCSVLine(line) {
   const result = [];
   let cur = "", inQ = false;
@@ -224,25 +192,22 @@ function parseCSVLine(line) {
   return result;
 }
 
-// ── Parsear CSV ───────────────────────────────────────────────
 function parseCSV(text) {
   const lines = text.trim().split("\n");
-  const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, ""));  // sin tildes
+  const headers = parseCSVLine(lines[0]).map(h =>
+    h.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
   return lines.slice(1)
     .map(line => {
       const cols = parseCSVLine(line);
       const obj = {};
       headers.forEach((h, i) => obj[h] = (cols[i] || "").trim());
-      // Mapear columnas del CSV a las esperadas por el código
       obj.apodo = obj.nombre || obj.apodo || "";
-      obj.fc    = obj.cumpleanos || obj.fc || "";  // "cumpleaños" sin tilde
+      obj.fc    = obj.cumpleanos || obj.fc || "";
       return obj;
     })
     .filter(r => r.apodo && /^\d{1,2}\/\d{1,2}$/.test(r.fc));
 }
 
-// ── Calcular próximo cumpleaños ───────────────────────────────
 function nextBday(fc) {
   const [d, m] = fc.split("/").map(Number);
   let bd = new Date(hoy.getFullYear(), m - 1, d);
@@ -251,7 +216,6 @@ function nextBday(fc) {
   return { date: bd, days };
 }
 
-// ── Render próximo cumpleaños ─────────────────────────────────
 function renderNext() {
   const sorted = participantes
     .map(p => ({ ...p, ...nextBday(p.fc) }))
@@ -276,10 +240,8 @@ function renderNext() {
   });
 }
 
-// ── Poblar selector ───────────────────────────────────────────
 function populateSelect() {
   const sel = document.getElementById("sel");
-  // limpiar opciones previas (excepto la primera)
   while (sel.options.length > 1) sel.remove(1);
   participantes.forEach(p => {
     const o = document.createElement("option");
@@ -289,11 +251,8 @@ function populateSelect() {
   });
 }
 
-// ── Calcular deuda de una persona ────────────────────────────
 function calcDebt(persona) {
   const mesActual = hoy.getMonth();
-
-  // cuántos cumpleaños por mes en el grupo
   const cumplesPorMes = {};
   MESES.forEach((m, i) => {
     cumplesPorMes[m] = participantes.filter(
@@ -305,8 +264,8 @@ function calcDebt(persona) {
   const filas = [];
 
   MESES.forEach((m, i) => {
-    if (i > mesActual) return;           // mes futuro, no aplica
-    if (cumplesPorMes[m] === 0) return;  // sin cumpleaños ese mes, no se cobra
+    if (i > mesActual) return;
+    if (cumplesPorMes[m] === 0) return;
 
     const cuota  = cumplesPorMes[m] * CUOTA;
     const estado = (persona[m] || "").toLowerCase().trim();
@@ -319,7 +278,6 @@ function calcDebt(persona) {
   return { filas, totalDeuda };
 }
 
-// ── Render panel deuda ────────────────────────────────────────
 function renderDebt() {
   const apodo  = document.getElementById("sel").value;
   const panel  = document.getElementById("debt-panel");
@@ -368,37 +326,12 @@ function renderDebt() {
     </div>`;
 }
 
-// ── Cargar datos ──────────────────────────────────────────────
 async function loadData() {
-
-  // DATOS DEMO (se usan mientras SHEET_CSV_URL = "TU_URL_AQUI")
-  const DEMO = [
-    { apodo:"Cote",  fc:"15/01", ene:"pagado",   feb:"pagado",   mar:"pagado",    abr:"",may:"",jun:"",jul:"",ago:"",sep:"",oct:"",nov:"",dic:"" },
-    { apodo:"Benja", fc:"03/03", ene:"pagado",   feb:"pagado",   mar:"pendiente", abr:"",may:"",jun:"",jul:"",ago:"",sep:"",oct:"",nov:"",dic:"" },
-    { apodo:"Rochi", fc:"22/07", ene:"pagado",   feb:"pagado",   mar:"pendiente", abr:"",may:"",jun:"",jul:"",ago:"",sep:"",oct:"",nov:"",dic:"" },
-    { apodo:"Seba",  fc:"08/11", ene:"pagado",   feb:"",         mar:"pendiente", abr:"",may:"",jun:"",jul:"",ago:"",sep:"",oct:"",nov:"",dic:"" },
-    { apodo:"Kari",  fc:"03/03", ene:"pagado",   feb:"pagado",   mar:"pagado",    abr:"",may:"",jun:"",jul:"",ago:"",sep:"",oct:"",nov:"",dic:"" },
-  ];
-
-  if (SHEET_CSV_URL === "TU_URL_AQUI") {
-    // Modo demo
-    participantes = DEMO;
-    renderNext();
-    populateSelect();
-    return;
-  }
-
-  // Modo real: cargar desde Google Sheets
-  document.getElementById("demo-banner").style.display = "none";
-  document.getElementById("sheet-link").href = SHEET_CSV_URL;
-
   async function fetchCSV() {
-    // 1° intento: directo
     try {
       const res = await fetch(SHEET_CSV_URL);
       if (res.ok) return await res.text();
     } catch(e) {}
-    // 2° intento: proxy CORS
     const proxy = "https://corsproxy.io/?" + encodeURIComponent(SHEET_CSV_URL);
     const res = await fetch(proxy);
     if (!res.ok) throw new Error("Proxy también falló");
@@ -411,9 +344,9 @@ async function loadData() {
     renderNext();
     populateSelect();
   } catch (err) {
-    document.getElementById("demo-banner").textContent =
-      "⚠️ Error al cargar Google Sheets. Revisa la URL y que la hoja esté publicada.";
-    document.getElementById("demo-banner").style.display = "block";
+    const banner = document.getElementById("error-banner");
+    banner.textContent = "⚠️ Error al cargar Google Sheets. Revisa la URL y que la hoja esté publicada.";
+    banner.style.display = "block";
     console.error("Error cargando sheet:", err);
   }
 }
