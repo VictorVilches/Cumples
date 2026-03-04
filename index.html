@@ -266,11 +266,11 @@ function renderNext() {
 
   const allEl = document.getElementById("all-list");
   allEl.innerHTML = "";
-  sorted.forEach((p, i) => {
+  sorted.slice(1).forEach((p, i) => {
     const row = document.createElement("div");
-    row.className = "all-row" + (i === 0 ? " first" : "");
+    row.className = "all-row";
     row.innerHTML = `
-      <span>${i === 0 ? "⭐ " : ""}${p.apodo}</span>
+      <span>${p.apodo}</span>
       <span class="right">${p.date.toLocaleDateString("es-CL",{day:"numeric",month:"short"})} · ${p.days}d</span>`;
     allEl.appendChild(row);
   });
