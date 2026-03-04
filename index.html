@@ -270,7 +270,7 @@ function renderNext() {
     const row = document.createElement("div");
     row.className = "all-row";
     row.innerHTML = `
-      <span>${p.apodo}</span>
+      <span>${i === 0 ? "⭐ " : ""}${p.apodo}</span>
       <span class="right">${p.date.toLocaleDateString("es-CL",{day:"numeric",month:"short"})} · ${p.days}d</span>`;
     allEl.appendChild(row);
   });
