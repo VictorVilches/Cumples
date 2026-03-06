@@ -166,14 +166,11 @@
 </p>
 
 <script>
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5FU6ZSIhT37leJHmXfJsjki6afwpoz4rq4umZ9qjmk_lsb85n0jaJzdxH0JJZuptVw19tpYpI1TeL/pub?gid=0&single=true&output=csv";
+// URL publicada de la hoja "Cuadro de Pago" (Archivo → Publicar en la web → CSV)
+const PAGOS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5FU6ZSIhT37leJHmXfJsjki6afwpoz4rq4umZ9qjmk_lsb85n0jaJzdxH0JJZuptVw19tpYpI1TeL/pub?gid=1417447314&single=true&output=csv";
 const CUOTA = 5000;
 
-const MESES   = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
-const MESES_N = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio",
-                 "Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-
-let participantes = [];
+let cumples = [], pagadores = [], secciones = [];
 const hoy = new Date();
 
 document.getElementById("today").textContent =
@@ -192,20 +189,61 @@ function parseCSVLine(line) {
   return result;
 }
 
-function parseCSV(text) {
-  const lines = text.trim().split("\n");
-  const headers = parseCSVLine(lines[0]).map(h =>
-    h.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
-  return lines.slice(1)
-    .map(line => {
-      const cols = parseCSVLine(line);
-      const obj = {};
-      headers.forEach((h, i) => obj[h] = (cols[i] || "").trim());
-      obj.apodo = obj.nombre || obj.apodo || "";
-      obj.fc    = obj.cumpleanos || obj.fc || "";
-      return obj;
-    })
-    .filter(r => r.apodo && /^\d{1,2}\/\d{1,2}$/.test(r.fc));
+// Parsea una sección del CSV a partir de la línea dada.
+// Estructura de cada sección:
+//   fila 0: Organización YYYY, $5.000, Cumpleaños YYYY, ...
+//   fila 1: Pagador, [Deuda], nombre1, nombre2, ...
+//   fila 2: ,, DD-MM, DD-MM, ...
+//   filas 3+: pagador, [deuda precalc], PAGADO/PENDIENTE, ...
+function parseSeccion(lines, start, year) {
+  const nameRow = parseCSVLine(lines[start + 1]);
+  const dateRow = parseCSVLine(lines[start + 2]);
+
+  const secCumples = [];
+  for (let i = 2; i < nameRow.length; i++) {
+    const nombre = (nameRow[i] || "").trim();
+    const fecha  = (dateRow[i]  || "").trim();
+    if (nombre && /^\d{2}-\d{2}$/.test(fecha)) {
+      const [d, m] = fecha.split("-").map(Number);
+      secCumples.push({ nombre, d, m, year, fc: `${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${year}` });
+    }
+  }
+
+  const secPagadores = [];
+  for (let i = start + 3; i < lines.length; i++) {
+    const cols  = parseCSVLine(lines[i]);
+    const nombre = (cols[0] || "").trim();
+    if (!nombre) break;
+    const pagos = {};
+    secCumples.forEach((c, j) => {
+      pagos[c.nombre] = (cols[j + 2] || "").trim().toUpperCase();
+    });
+    secPagadores.push({ nombre, pagos });
+  }
+
+  return { year, cumples: secCumples, pagadores: secPagadores };
+}
+
+function parsePagos(text) {
+  const lines = text.split("\n").map(l => l.trim());
+  const currentYear = hoy.getFullYear();
+  const years = [currentYear - 1, currentYear]; // 2025 y 2026
+
+  secciones = [];
+  for (let i = 0; i < lines.length; i++) {
+    const col0 = (parseCSVLine(lines[i])[0] || "")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const yearMatch = lines[i].match(/\b(20\d{2})\b/);
+    if (!col0.startsWith("organizacion") || !yearMatch) continue;
+    const year = parseInt(yearMatch[1]);
+    if (!years.includes(year)) continue;
+    secciones.push(parseSeccion(lines, i, year));
+  }
+
+  // cumples y pagadores del año actual (para próximo cumpleaños y selector)
+  const secActual = secciones.find(s => s.year === currentYear);
+  cumples   = secActual ? secActual.cumples   : [];
+  pagadores = secActual ? secActual.pagadores : [];
 }
 
 function nextBday(fc) {
@@ -217,12 +255,12 @@ function nextBday(fc) {
 }
 
 function renderNext() {
-  const sorted = participantes
-    .map(p => ({ ...p, ...nextBday(p.fc) }))
+  const sorted = cumples
+    .map(c => ({ ...c, ...nextBday(c.fc) }))
     .sort((a, b) => a.days - b.days);
 
   const next = sorted[0];
-  document.getElementById("next-name").textContent = next.apodo;
+  document.getElementById("next-name").textContent = next.nombre;
   document.getElementById("next-date").textContent =
     next.date.toLocaleDateString("es-CL", { day:"numeric", month:"long" });
   document.getElementById("next-days").textContent = next.days;
@@ -230,12 +268,12 @@ function renderNext() {
 
   const allEl = document.getElementById("all-list");
   allEl.innerHTML = "";
-  sorted.slice(1).forEach((p, i) => {
+  sorted.slice(1).forEach((c, i) => {
     const row = document.createElement("div");
     row.className = "all-row";
     row.innerHTML = `
-      <span>${i === 0 ? "⭐ " : ""}${p.apodo}</span>
-      <span class="right">${p.date.toLocaleDateString("es-CL",{day:"numeric",month:"short"})} · ${p.days}d</span>`;
+      <span>${i === 0 ? "⭐ " : ""}${c.nombre}</span>
+      <span class="right">${c.date.toLocaleDateString("es-CL",{day:"numeric",month:"short"})} · ${c.days}d</span>`;
     allEl.appendChild(row);
   });
 }
@@ -243,109 +281,122 @@ function renderNext() {
 function populateSelect() {
   const sel = document.getElementById("sel");
   while (sel.options.length > 1) sel.remove(1);
-  participantes.forEach(p => {
+  pagadores.forEach(p => {
     const o = document.createElement("option");
-    o.value = p.apodo;
-    o.textContent = p.apodo;
+    o.value = p.nombre;
+    o.textContent = p.nombre;
     sel.appendChild(o);
   });
 }
 
-function calcDebt(persona) {
-  const mesActual = hoy.getMonth();
-  const cumplesPorMes = {};
-  MESES.forEach((m, i) => {
-    cumplesPorMes[m] = participantes.filter(
-      p => parseInt(p.fc.split("/")[1]) - 1 === i
-    ).length;
-  });
-
-  let totalDeuda = 0;
+// Suma deuda de todos los años parseados.
+// Año anterior: todos los eventos cuentan (año cerrado).
+// Año actual: solo eventos con fecha ≤ hoy.
+function calcDebt(nombre) {
   const filas = [];
+  let totalDeuda = 0;
+  const currentYear = hoy.getFullYear();
 
-  MESES.forEach((m, i) => {
-    if (i > mesActual) return;
-    if (cumplesPorMes[m] === 0) return;
+  for (const sec of secciones) {
+    const payer = sec.pagadores.find(p => p.nombre === nombre);
+    if (!payer) continue;
 
-    const cuota  = cumplesPorMes[m] * CUOTA;
-    const estado = (persona[m] || "").toLowerCase().trim();
-    const pagado = ["pagado", "pago", "si", "sí", "ok", "✓"].includes(estado);
+    for (const c of sec.cumples) {
+      if (sec.year === currentYear) {
+        const fechaCumple = new Date(currentYear, c.m - 1, c.d);
+        if (fechaCumple > hoy) continue;
+      }
 
-    if (!pagado) totalDeuda += cuota;
-    filas.push({ mes: MESES_N[i], cuota, pagado, n: cumplesPorMes[m] });
-  });
+      const estado = payer.pagos[c.nombre] || "";
+      if (!estado) continue; // celda vacía = no aplica
+
+      const pagado = estado === "PAGADO";
+      if (!pagado) {
+        totalDeuda += CUOTA;
+        filas.push({ nombre: c.nombre, fc: c.fc, año: sec.year });
+      }
+    }
+  }
 
   return { filas, totalDeuda };
 }
 
 function renderDebt() {
-  const apodo  = document.getElementById("sel").value;
+  const nombre = document.getElementById("sel").value;
   const panel  = document.getElementById("debt-panel");
 
-  if (!apodo) {
+  if (!nombre) {
     panel.innerHTML = '<div class="empty">Selecciona un nombre para ver su deuda</div>';
     return;
   }
 
-  const persona = participantes.find(p => p.apodo === apodo);
-  if (!persona) return;
-
-  const { filas, totalDeuda } = calcDebt(persona);
+  const { filas, totalDeuda } = calcDebt(nombre);
 
   if (!filas.length) {
-    panel.innerHTML = '<div class="empty">No hay meses con cumpleaños registrados aún este año.</div>';
+    panel.innerHTML = `
+      <div class="debt-header">
+        <span class="debt-name">${nombre}</span>
+        <span class="badge paid">Al día ✓</span>
+      </div>
+      <div class="empty">¡Sin deuda! 🎉</div>`;
     return;
   }
 
   const rows = filas.map(f => `
-    <tr class="${f.pagado ? 'row-paid' : 'row-pend'}">
-      <td>${f.mes}</td>
-      <td>${f.n} 🎂</td>
-      <td>$${f.cuota.toLocaleString("es-CL")}</td>
-      <td>${f.pagado ? "✅ Pagado" : "❌ Pendiente"}</td>
+    <tr class="row-pend">
+      <td>${f.nombre}</td>
+      <td>${f.fc}</td>
+      <td>${f.año}</td>
+      <td>❌ Pendiente</td>
     </tr>`).join("");
 
   panel.innerHTML = `
     <div class="debt-header">
-      <span class="debt-name">${apodo}</span>
-      <span class="badge ${totalDeuda === 0 ? 'paid' : 'debt'}">
-        ${totalDeuda === 0 ? "Al día ✓" : "Con deuda"}
-      </span>
+      <span class="debt-name">${nombre}</span>
+      <span class="badge debt">Con deuda</span>
     </div>
     <table>
       <thead>
-        <tr><th>Mes</th><th>Evento</th><th>Cuota</th><th>Estado</th></tr>
+        <tr><th>Cumpleañero</th><th>Fecha</th><th>Año</th><th></th></tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
     <div class="total-row">
       <span class="total-lbl">Total pendiente</span>
-      <span class="total-amt ${totalDeuda === 0 ? 'ok' : 'ko'}">
-        ${totalDeuda === 0 ? "¡Pagado! 🎉" : "$" + totalDeuda.toLocaleString("es-CL")}
-      </span>
+      <span class="total-amt ko">$${totalDeuda.toLocaleString("es-CL")}</span>
     </div>`;
 }
 
 async function loadData() {
-  async function fetchCSV() {
-    try {
-      const res = await fetch(SHEET_CSV_URL);
-      if (res.ok) return await res.text();
-    } catch(e) {}
-    const proxy = "https://corsproxy.io/?" + encodeURIComponent(SHEET_CSV_URL);
-    const res = await fetch(proxy);
-    if (!res.ok) throw new Error("Proxy también falló");
+  async function tryFetch(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.text();
   }
 
+  async function fetchCSV() {
+    // 1° intento: directo
+    try { return await tryFetch(PAGOS_CSV_URL); } catch(e) {}
+    // 2° intento: allorigins
+    try { return await tryFetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(PAGOS_CSV_URL)); } catch(e) {}
+    // 3° intento: corsproxy
+    return await tryFetch("https://corsproxy.io/?" + encodeURIComponent(PAGOS_CSV_URL));
+  }
+
+  const banner = document.getElementById("error-banner");
+
   try {
     const text = await fetchCSV();
-    participantes = parseCSV(text);
+    parsePagos(text);
+
+    if (cumples.length === 0) {
+      throw new Error(`Sección del año ${hoy.getFullYear()} no encontrada en el CSV.`);
+    }
+
     renderNext();
     populateSelect();
   } catch (err) {
-    const banner = document.getElementById("error-banner");
-    banner.textContent = "⚠️ Error al cargar Google Sheets. Revisa la URL y que la hoja esté publicada.";
+    banner.textContent = "⚠️ " + err.message;
     banner.style.display = "block";
     console.error("Error cargando sheet:", err);
   }
