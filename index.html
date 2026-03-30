@@ -3,179 +3,757 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🐄 Cumpleaños</title>
+  <title>Cumpleaños 🐄</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&family=JetBrains+Mono:wght@400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ── Tokens ─────────────────────────────────────────────── */
+    :root {
+      --bg:          #06060f;
+      --surface:     #0c0c1c;
+      --card:        #10101e;
+      --card-hover:  #141428;
+      --border:      rgba(255,255,255,0.07);
+      --border-hi:   rgba(255,255,255,0.13);
+
+      --amber:       #f59e0b;
+      --amber-dim:   rgba(245,158,11,0.12);
+      --amber-glow:  rgba(245,158,11,0.06);
+
+      --violet:      #a78bfa;
+      --violet-dim:  rgba(167,139,250,0.14);
+
+      --green:       #34d399;
+      --green-dim:   rgba(52,211,153,0.12);
+
+      --red:         #f87171;
+      --red-dim:     rgba(248,113,113,0.12);
+
+      --text:        #ddddf0;
+      --text-muted:  #6b7280;
+      --text-faint:  #3f4155;
+
+      --radius:      14px;
+      --radius-sm:   8px;
+    }
+
+    /* ── Reset & base ────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'DM Sans', sans-serif;
       min-height: 100vh;
-      color: #fff;
-      padding: 20px 16px;
+      color: var(--text);
+      padding: 0;
+      background-color: var(--bg);
     }
 
-    h1 { text-align: center; font-size: 1.7rem; margin-bottom: 4px; letter-spacing: 1px; }
-    .subtitle { text-align: center; color: #90cdf4; font-size: 0.82rem; margin-bottom: 22px; }
-
-    .card {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 16px;
-      padding: 18px 20px;
-      margin-bottom: 18px;
+    /* Noise texture overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 128px 128px;
     }
 
-    .lbl {
-      font-size: 0.68rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #90cdf4;
-      margin-bottom: 6px;
+    /* ── Layout ──────────────────────────────────────────────── */
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 16px 0;
+      position: relative;
+      z-index: 1;
     }
 
-    .date-row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-    .date-box .val { font-weight: 700; font-size: 0.95rem; text-transform: capitalize; }
+    /* ── Hero section ────────────────────────────────────────── */
+    .hero-section {
+      position: relative;
+      margin-bottom: 20px;
+    }
 
-    .next-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
-    .cake { font-size: 2.8rem; }
-    .bday-name { font-size: 1.5rem; font-weight: 900; color: #fbd38d; }
-    .bday-sub  { color: #a0aec0; font-size: 0.85rem; margin-top: 2px; text-transform: capitalize; }
+    .hero-banner {
+      width: 100%;
+      height: 200px;
+      overflow: hidden;
+    }
 
-    .days-badge {
-      background: linear-gradient(135deg, #f6ad55, #ed8936);
-      border-radius: 12px;
-      padding: 12px 18px;
+    .hero-banner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+    }
+
+    /* fade inferior para que la card se integre al fondo */
+    .hero-banner::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 80px;
+      background: linear-gradient(to bottom, transparent, var(--bg));
+      pointer-events: none;
+    }
+
+    .hero-card-wrap {
+      max-width: 480px;
+      margin: -36px auto 0;
+      padding: 0 16px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-card {
+      background: rgba(16, 16, 30, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-hi);
+      border-radius: var(--radius);
+      padding: 18px 22px 16px;
       text-align: center;
-      min-width: 78px;
-      margin-left: auto;
     }
-    .days-num { font-size: 2rem; font-weight: 900; line-height: 1; }
-    .days-lbl { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; opacity: .85; }
 
-    .all-list { margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; }
+    .hero-card h1 {
+      font-family: 'PT Sans', sans-serif;
+      font-size: 1.55rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .hero-card h1 span { color: var(--amber); }
+
+    .hero-card p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-family: 'PT Sans', sans-serif;
+      font-weight: 600;
+    }
+
+    .header-line {
+      width: 32px;
+      height: 2px;
+      background: var(--amber);
+      margin: 10px auto 0;
+      border-radius: 2px;
+    }
+
+    /* ── Cards ───────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+      margin-bottom: 14px;
+      transition: border-color 0.2s, background 0.2s;
+      opacity: 0;
+      transform: translateY(14px);
+    }
+
+    .card.animate {
+      animation: fadeUp 0.45s cubic-bezier(.22,.68,0,1.2) forwards;
+    }
+
+    .card:hover {
+      border-color: var(--border-hi);
+      background: var(--card-hover);
+    }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Section label ───────────────────────────────────────── */
+    .lbl {
+      font-family: 'PT Sans', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .lbl::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Date card ───────────────────────────────────────────── */
+    .today-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-transform: capitalize;
+    }
+
+    /* ── Next birthday card ──────────────────────────────────── */
+    .next-layout {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-top: 14px;
+      position: relative;
+    }
+
+    /* ambient glow behind name */
+    .next-layout::before {
+      content: '';
+      position: absolute;
+      top: -20px; left: -22px; right: -22px; bottom: -20px;
+      background: radial-gradient(ellipse at 30% 50%, rgba(245,158,11,0.05) 0%, transparent 70%);
+      pointer-events: none;
+      border-radius: var(--radius);
+    }
+
+    .next-info { flex: 1; min-width: 0; }
+
+    .next-name {
+      font-family: 'PT Sans', sans-serif;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--amber);
+      line-height: 1;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .next-date-sub {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-top: 5px;
+      text-transform: capitalize;
+    }
+
+    /* Today is birthday! */
+    .next-name.is-today {
+      color: var(--green);
+    }
+
+    /* Days badge */
+    .days-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--violet-dim);
+      border: 1px solid rgba(167,139,250,0.25);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      min-width: 72px;
+      flex-shrink: 0;
+    }
+
+    .days-badge.is-today {
+      background: var(--green-dim);
+      border-color: rgba(52,211,153,0.3);
+    }
+
+    .days-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--violet);
+    }
+
+    .days-badge.is-today .days-num {
+      color: var(--green);
+      font-size: 1.4rem;
+    }
+
+    .days-txt {
+      font-family: 'PT Sans', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    /* ── Siguientes list ─────────────────────────────────────── */
+    .all-list {
+      margin-top: 18px;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+
     .all-row {
       display: flex;
       justify-content: space-between;
-      padding: 6px 0;
-      font-size: 0.84rem;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      gap: 10px;
     }
+
     .all-row:last-child { border-bottom: none; }
-    .all-row .right { color: #90cdf4; }
+
+    .all-row-name {
+      font-size: 0.87rem;
+      font-weight: 500;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .all-row-right {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* ── Resumen deudores ────────────────────────────────────── */
+    .deudor-row {
+      display: flex;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      gap: 10px;
+    }
+
+    .deudor-row:last-child { border-bottom: none; }
+
+    .deudor-rank {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-faint);
+      width: 18px;
+      flex-shrink: 0;
+    }
+
+    .deudor-name {
+      font-size: 0.88rem;
+      font-weight: 500;
+      flex: 1;
+    }
+
+    .deudor-amount {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--red);
+      background: var(--red-dim);
+      border-radius: 6px;
+      padding: 3px 9px;
+    }
+
+    .no-deudores {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.84rem;
+      padding: 20px 0;
+      font-family: 'PT Sans', sans-serif;
+    }
+
+    /* ── Select ──────────────────────────────────────────────── */
+    .select-wrap {
+      position: relative;
+      margin-top: 12px;
+    }
+
+    .select-wrap::after {
+      content: '↓';
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+      font-size: 0.85rem;
+    }
 
     select {
-      width: 100%; margin-top: 10px; padding: 11px 14px;
-      border-radius: 10px; border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.1); color: #fff; font-size: 0.95rem; cursor: pointer;
+      width: 100%;
+      padding: 12px 38px 12px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-hi);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.93rem;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: border-color 0.2s;
     }
-    select option { background: #1a1a2e; }
 
-    .debt-header { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 14px; }
-    .debt-name { font-size: 1.1rem; font-weight: 800; color: #fbd38d; }
-
-    .badge { padding: 4px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-    .badge.paid { background: #276749; color: #9ae6b4; }
-    .badge.debt { background: #742a2a; color: #feb2b2; }
-
-    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    th {
-      text-align: left; color: #90cdf4;
-      font-size: 0.67rem; text-transform: uppercase; letter-spacing: .8px;
-      padding: 6px 6px; border-bottom: 1px solid rgba(255,255,255,0.1);
+    select:focus {
+      outline: none;
+      border-color: var(--amber);
     }
-    td { padding: 9px 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-    tr:last-child td { border-bottom: none; }
-    .row-paid td { color: #68d391; }
-    .row-pend td { color: #fc8181; }
 
-    .total-row {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-top: 14px; padding-top: 14px;
-      border-top: 1px solid rgba(255,255,255,0.15);
+    select option { background: #111120; }
+
+    /* ── Debt panel ──────────────────────────────────────────── */
+    #debt-panel { margin-top: 16px; }
+
+    .debt-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
     }
-    .total-lbl { color: #a0aec0; font-size: 0.85rem; }
-    .total-amt { font-size: 1.25rem; font-weight: 900; }
-    .total-amt.ok { color: #68d391; }
-    .total-amt.ko { color: #fc8181; }
 
-    .empty { text-align: center; color: #718096; padding: 28px 0; font-size: 0.88rem; }
-    .footer { text-align: center; color: #4a5568; font-size: 0.72rem; margin-top: 4px; }
-    .footer a { color: #90cdf4; text-decoration: none; }
+    .debt-person-name {
+      font-family: 'PT Sans', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--amber);
+    }
 
-    .error-banner {
-      background: rgba(252,129,129,0.15);
-      border: 1px solid rgba(252,129,129,0.3);
-      border-radius: 10px;
-      padding: 8px 14px;
+    .badge {
+      font-family: 'PT Sans', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    .badge-ok  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(52,211,153,0.25); }
+    .badge-ko  { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,113,113,0.25); }
+
+    /* Debt table */
+    .debt-year-header {
+      font-family: 'PT Sans', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      padding: 8px 0 4px;
+      border-bottom: 1px solid var(--border);
+      margin-top: 4px;
+    }
+
+    .debt-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+
+    .debt-item:last-child { border-bottom: none; }
+
+    .debt-item-name {
+      flex: 1;
+      font-size: 0.87rem;
+      font-weight: 500;
+      color: var(--red);
+    }
+
+    .debt-item-date {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .debt-item-icon { font-size: 0.9rem; }
+
+    /* Total */
+    .debt-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border-hi);
+    }
+
+    .debt-total-lbl {
+      font-family: 'PT Sans', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .debt-total-amt {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--red);
+    }
+
+    /* ── Perfil ──────────────────────────────────────────────── */
+    .profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-top: 16px;
+      margin-bottom: 16px;
+    }
+
+    .profile-name {
+      font-family: 'PT Sans', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--amber);
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .profile-bday {
+      font-family: 'JetBrains Mono', monospace;
       font-size: 0.78rem;
-      color: #feb2b2;
+      color: var(--text-muted);
+      margin-top: 5px;
+    }
+
+    .profile-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .profile-stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+
+    .profile-stat-lbl {
+      font-family: 'PT Sans', sans-serif;
+      font-size: 0.58rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-faint);
+      margin-bottom: 5px;
+    }
+
+    .profile-stat-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .profile-stat-val.ok  { color: var(--green); }
+    .profile-stat-val.ko  { color: var(--red); }
+
+    .profile-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 14px 0;
+    }
+
+    /* ── Empty / placeholder ─────────────────────────────────── */
+    .empty {
       text-align: center;
-      margin-bottom: 18px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 24px 0;
+    }
+
+    .clean-state {
+      text-align: center;
+      padding: 20px 0 8px;
+    }
+
+    .clean-state p {
+      color: var(--green);
+      font-family: 'PT Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    /* ── Loading ─────────────────────────────────────────────── */
+    #loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 60px 0;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 2px solid var(--border-hi);
+      border-top-color: var(--amber);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #loading p {
+      font-family: 'PT Sans', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    /* ── Main content (hidden until loaded) ──────────────────── */
+    #main-content { display: none; }
+    #main-content .card:last-child { margin-bottom: 0; }
+
+    /* ── Error banner ────────────────────────────────────────── */
+    .error-banner {
+      background: var(--red-dim);
+      border: 1px solid rgba(248,113,113,0.25);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      color: var(--red);
+      text-align: center;
+      margin-bottom: 16px;
       display: none;
     }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    .site-footer {
+      text-align: center;
+      padding: 32px 16px 28px;
+    }
+
+    .site-footer p {
+      font-family: 'PT Sans', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.25);
+    }
+
+    .site-footer a {
+      color: rgba(255,255,255,0.35);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .site-footer a:hover { color: var(--amber); }
   </style>
 </head>
 <body>
 
-<h1>🐄 Cumpleaños</h1>
-<p class="subtitle">Gestión de cuotas del grupo</p>
+<!-- Hero: banner de fondo + card encima -->
+<div class="hero-section">
+  <div class="hero-banner">
+    <img src="banner renetour.jpg" alt="Renetour">
+  </div>
+  <div class="hero-card-wrap">
+    <div class="hero-card">
+      <h1>🐄 <span>Cumpleaños</span></h1>
+      <p>Gestión de cuotas del grupo</p>
+      <div class="header-line"></div>
+    </div>
+  </div>
+</div>
 
-<div class="error-banner" id="error-banner"></div>
+<div class="app">
 
-<div class="card">
-  <div class="date-row">
-    <div class="date-box">
+  <div class="error-banner" id="error-banner"></div>
+
+  <!-- Loading state -->
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>Cargando datos...</p>
+  </div>
+
+  <!-- Main content (shown after data loads) -->
+  <div id="main-content">
+
+    <!-- Fecha -->
+    <div class="card">
       <div class="lbl">📅 Hoy</div>
-      <div class="val" id="today"></div>
+      <div class="today-val" id="today"></div>
     </div>
-  </div>
-</div>
 
-<div class="card">
-  <div class="lbl">🎉 Próximo cumpleaños</div>
-  <div class="next-wrap">
-    <div class="cake">🎂</div>
-    <div>
-      <div class="bday-name" id="next-name"></div>
-      <div class="bday-sub"  id="next-date"></div>
+    <!-- Próximo cumpleaños -->
+    <div class="card">
+      <div class="lbl">🎉 Próximo cumpleaños</div>
+      <div class="next-layout">
+        <div class="next-info">
+          <div class="next-name" id="next-name"></div>
+          <div class="next-date-sub" id="next-date"></div>
+        </div>
+        <div class="days-badge" id="days-badge">
+          <div class="days-num" id="next-days"></div>
+          <div class="days-txt" id="next-days-lbl"></div>
+        </div>
+      </div>
+      <div class="all-list">
+        <div class="lbl" style="margin-bottom:10px">📋 Siguientes</div>
+        <div id="all-list"></div>
+      </div>
     </div>
-    <div class="days-badge">
-      <div class="days-num" id="next-days"></div>
-      <div class="days-lbl" id="next-days-lbl"></div>
+
+    <!-- Resumen deudores -->
+    <div class="card">
+      <div class="lbl">💸 Con deuda activa</div>
+      <div id="resumen-panel"></div>
     </div>
-  </div>
-  <div class="all-list">
-    <div class="lbl" style="margin-bottom:8px">📋 Siguientes cumpleaños</div>
-    <div id="all-list"></div>
-  </div>
-</div>
 
-<div class="card">
-  <div class="lbl">👤 Ver deuda por persona</div>
-  <select id="sel" onchange="renderDebt()">
-    <option value="">— Selecciona un nombre —</option>
-  </select>
-  <div id="debt-panel">
-    <div class="empty">Selecciona un nombre para ver su deuda</div>
-  </div>
-</div>
+    <!-- Ver perfil -->
+    <div class="card">
+      <div class="lbl">👤 Ver perfil</div>
+      <div class="select-wrap">
+        <select id="sel" onchange="renderProfile()">
+          <option value="">— Selecciona un nombre —</option>
+        </select>
+      </div>
+      <div id="debt-panel">
+        <div class="empty">Selecciona un nombre para ver su perfil</div>
+      </div>
+    </div>
 
-<p class="footer">
-  2026 diseño por <a href="https://victorv.pro/" target="_blank">victorv.pro</a>
-</p>
+  </div><!-- /main-content -->
+
+
+</div><!-- /app -->
+
+<!-- Footer -->
+<footer class="site-footer">
+  <p>2026 diseño por <a href="https://victorv.pro/" target="_blank">victorv.pro</a></p>
+</footer>
 
 <script>
-// URL publicada de la hoja "Cuadro de Pago" (Archivo → Publicar en la web → CSV)
 const PAGOS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT5FU6ZSIhT37leJHmXfJsjki6afwpoz4rq4umZ9qjmk_lsb85n0jaJzdxH0JJZuptVw19tpYpI1TeL/pub?gid=1417447314&single=true&output=csv";
 const CUOTA = 5000;
 
 let cumples = [], pagadores = [], secciones = [];
-const hoy = new Date();
+const hoy     = new Date();
+const hoyMid  = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()); // medianoche de hoy
 
 document.getElementById("today").textContent =
   hoy.toLocaleDateString("es-CL", { weekday:"long", day:"numeric", month:"long", year:"numeric" });
 
+// ── CSV parser ───────────────────────────────────────────────
 function parseCSVLine(line) {
   const result = [];
   let cur = "", inQ = false;
@@ -189,12 +767,6 @@ function parseCSVLine(line) {
   return result;
 }
 
-// Parsea una sección del CSV a partir de la línea dada.
-// Estructura de cada sección:
-//   fila 0: Organización YYYY, $5.000, Cumpleaños YYYY, ...
-//   fila 1: Pagador, [Deuda], nombre1, nombre2, ...
-//   fila 2: ,, DD-MM, DD-MM, ...
-//   filas 3+: pagador, [deuda precalc], PAGADO/PENDIENTE, ...
 function parseSeccion(lines, start, year) {
   const nameRow = parseCSVLine(lines[start + 1]);
   const dateRow = parseCSVLine(lines[start + 2]);
@@ -205,16 +777,19 @@ function parseSeccion(lines, start, year) {
     const fecha  = (dateRow[i]  || "").trim();
     if (nombre && /^\d{2}-\d{2}$/.test(fecha)) {
       const [d, m] = fecha.split("-").map(Number);
-      secCumples.push({ nombre, d, m, year, fc: `${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${year}` });
+      secCumples.push({
+        nombre, d, m, year,
+        fc: `${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${year}`
+      });
     }
   }
 
   const secPagadores = [];
   for (let i = start + 3; i < lines.length; i++) {
-    const cols  = parseCSVLine(lines[i]);
+    const cols   = parseCSVLine(lines[i]);
     const nombre = (cols[0] || "").trim();
     if (!nombre) break;
-    const pagos = {};
+    const pagos  = {};
     secCumples.forEach((c, j) => {
       pagos[c.nombre] = (cols[j + 2] || "").trim().toUpperCase();
     });
@@ -225,13 +800,13 @@ function parseSeccion(lines, start, year) {
 }
 
 function parsePagos(text) {
-  const lines = text.split("\n").map(l => l.trim());
+  const lines       = text.split("\n").map(l => l.trim());
   const currentYear = hoy.getFullYear();
-  const years = [currentYear - 1, currentYear]; // 2025 y 2026
+  const years       = [currentYear - 1, currentYear];
 
   secciones = [];
   for (let i = 0; i < lines.length; i++) {
-    const col0 = (parseCSVLine(lines[i])[0] || "")
+    const col0      = (parseCSVLine(lines[i])[0] || "")
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     const yearMatch = lines[i].match(/\b(20\d{2})\b/);
     if (!col0.startsWith("organizacion") || !yearMatch) continue;
@@ -240,61 +815,74 @@ function parsePagos(text) {
     secciones.push(parseSeccion(lines, i, year));
   }
 
-  // cumples y pagadores del año actual (para próximo cumpleaños y selector)
   const secActual = secciones.find(s => s.year === currentYear);
   cumples   = secActual ? secActual.cumples   : [];
   pagadores = secActual ? secActual.pagadores : [];
 }
 
-function nextBday(fc) {
-  const [d, m] = fc.split("/").map(Number);
+// ── Próximo cumpleaños ───────────────────────────────────────
+function nextBday(d, m) {
   let bd = new Date(hoy.getFullYear(), m - 1, d);
-  if (bd <= hoy) bd = new Date(hoy.getFullYear() + 1, m - 1, d);
-  const days = Math.ceil((bd - hoy) / 86400000);
+  if (bd < hoyMid) bd = new Date(hoy.getFullYear() + 1, m - 1, d);
+  const days = Math.round((bd - hoyMid) / 86400000);
   return { date: bd, days };
 }
 
 function renderNext() {
   const sorted = cumples
-    .map(c => ({ ...c, ...nextBday(c.fc) }))
+    .map(c => ({ ...c, ...nextBday(c.d, c.m) }))
     .sort((a, b) => a.days - b.days);
 
-  const next = sorted[0];
-  document.getElementById("next-name").textContent = next.nombre;
-  document.getElementById("next-date").textContent =
-    next.date.toLocaleDateString("es-CL", { day:"numeric", month:"long" });
-  document.getElementById("next-days").textContent = next.days;
-  document.getElementById("next-days-lbl").textContent = next.days === 1 ? "día" : "días";
+  const next   = sorted[0];
+  const isToday = next.days === 0;
+
+  const nameEl  = document.getElementById("next-name");
+  const badgeEl = document.getElementById("days-badge");
+
+  nameEl.textContent  = next.nombre;
+  nameEl.className    = "next-name" + (isToday ? " is-today" : "");
+  badgeEl.className   = "days-badge" + (isToday ? " is-today" : "");
+
+  if (isToday) {
+    document.getElementById("next-days").textContent     = "🎂";
+    document.getElementById("next-days-lbl").textContent = "¡Hoy!";
+    document.getElementById("next-date").textContent     = "¡Feliz cumpleaños!";
+  } else {
+    document.getElementById("next-days").textContent     = next.days;
+    document.getElementById("next-days-lbl").textContent = next.days === 1 ? "día" : "días";
+    document.getElementById("next-date").textContent     =
+      next.date.toLocaleDateString("es-CL", { day:"numeric", month:"long" });
+  }
 
   const allEl = document.getElementById("all-list");
   allEl.innerHTML = "";
-  sorted.slice(1).forEach((c, i) => {
+  sorted.slice(1, 4).forEach((c, i) => {
     const row = document.createElement("div");
     row.className = "all-row";
     row.innerHTML = `
-      <span>${i === 0 ? "⭐ " : ""}${c.nombre}</span>
-      <span class="right">${c.date.toLocaleDateString("es-CL",{day:"numeric",month:"short"})} · ${c.days}d</span>`;
+      <span class="all-row-name">${c.nombre}</span>
+      <span class="all-row-right">${c.date.toLocaleDateString("es-CL",{day:"numeric",month:"short"})} · ${c.days}d</span>`;
     allEl.appendChild(row);
   });
 }
 
+// ── Selector (ordenado alfabéticamente) ─────────────────────
 function populateSelect() {
-  const sel = document.getElementById("sel");
+  const sel    = document.getElementById("sel");
+  const sorted = [...pagadores].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
   while (sel.options.length > 1) sel.remove(1);
-  pagadores.forEach(p => {
-    const o = document.createElement("option");
-    o.value = p.nombre;
+  sorted.forEach(p => {
+    const o     = document.createElement("option");
+    o.value     = p.nombre;
     o.textContent = p.nombre;
     sel.appendChild(o);
   });
 }
 
-// Suma deuda de todos los años parseados.
-// Año anterior: todos los eventos cuentan (año cerrado).
-// Año actual: solo eventos con fecha ≤ hoy.
+// ── Calcular deuda ───────────────────────────────────────────
 function calcDebt(nombre) {
-  const filas = [];
-  let totalDeuda = 0;
+  const filas       = {};  // agrupado por año
+  let   totalDeuda  = 0;
   const currentYear = hoy.getFullYear();
 
   for (const sec of secciones) {
@@ -304,16 +892,14 @@ function calcDebt(nombre) {
     for (const c of sec.cumples) {
       if (sec.year === currentYear) {
         const fechaCumple = new Date(currentYear, c.m - 1, c.d);
-        if (fechaCumple > hoy) continue;
+        if (fechaCumple > hoyMid) continue;
       }
-
       const estado = payer.pagos[c.nombre] || "";
-      if (!estado) continue; // celda vacía = no aplica
-
-      const pagado = estado === "PAGADO";
-      if (!pagado) {
+      if (!estado) continue;
+      if (estado !== "PAGADO") {
         totalDeuda += CUOTA;
-        filas.push({ nombre: c.nombre, fc: c.fc, año: sec.year });
+        if (!filas[sec.year]) filas[sec.year] = [];
+        filas[sec.year].push({ nombre: c.nombre, fc: c.fc });
       }
     }
   }
@@ -321,52 +907,125 @@ function calcDebt(nombre) {
   return { filas, totalDeuda };
 }
 
-function renderDebt() {
+// ── Buscar cumpleaños de una persona ────────────────────────
+function getBirthday(nombre) {
+  for (const sec of secciones) {
+    const c = sec.cumples.find(c => c.nombre === nombre);
+    if (c) return c;
+  }
+  return null;
+}
+
+// ── Render perfil ────────────────────────────────────────────
+function renderProfile() {
   const nombre = document.getElementById("sel").value;
   const panel  = document.getElementById("debt-panel");
 
   if (!nombre) {
-    panel.innerHTML = '<div class="empty">Selecciona un nombre para ver su deuda</div>';
+    panel.innerHTML = '<div class="empty">Selecciona un nombre para ver su perfil</div>';
     return;
   }
 
   const { filas, totalDeuda } = calcDebt(nombre);
+  const bday    = getBirthday(nombre);
+  const años    = Object.keys(filas).map(Number).sort();
+  const sinDeuda = !años.length;
 
-  if (!filas.length) {
-    panel.innerHTML = `
-      <div class="debt-header">
-        <span class="debt-name">${nombre}</span>
-        <span class="badge paid">Al día ✓</span>
+  // Próximo cumpleaños del usuario
+  let proximoCumple = "—";
+  let diasParaCumple = "—";
+  if (bday) {
+    const { date, days } = nextBday(bday.d, bday.m);
+    proximoCumple  = date.toLocaleDateString("es-CL", { day:"numeric", month:"long" });
+    diasParaCumple = days === 0 ? "¡Hoy! 🎂" : `${days}d`;
+  }
+
+  // Cuotas pagadas este año
+  const secActual = secciones.find(s => s.year === hoy.getFullYear());
+  let pagadasAño = 0, totalAño = 0;
+  if (secActual) {
+    const payer = secActual.pagadores.find(p => p.nombre === nombre);
+    if (payer) {
+      secActual.cumples.forEach(c => {
+        const fechaCumple = new Date(hoy.getFullYear(), c.m - 1, c.d);
+        if (fechaCumple > hoyMid) return;
+        const estado = payer.pagos[c.nombre] || "";
+        if (!estado) return;
+        totalAño++;
+        if (estado === "PAGADO") pagadasAño++;
+      });
+    }
+  }
+
+  // Deuda pendiente por año (para el detalle)
+  let detalleRows = "";
+  for (const año of años) {
+    detalleRows += `<div class="debt-year-header">${año}</div>`;
+    filas[año].forEach(f => {
+      detalleRows += `
+        <div class="debt-item">
+          <span class="debt-item-icon">❌</span>
+          <span class="debt-item-name">${f.nombre}</span>
+          <span class="debt-item-date">${f.fc}</span>
+        </div>`;
+    });
+  }
+
+  panel.innerHTML = `
+    <div class="profile-header">
+      <div>
+        <div class="profile-name">${nombre}</div>
+        ${bday ? `<div class="profile-bday">🎂 ${String(bday.d).padStart(2,"0")}/${String(bday.m).padStart(2,"0")} · ${proximoCumple} (${diasParaCumple})</div>` : ""}
       </div>
-      <div class="empty">¡Sin deuda! 🎉</div>`;
+      <span class="badge ${sinDeuda ? "badge-ok" : "badge-ko"}">${sinDeuda ? "Al día ✓" : "Con deuda"}</span>
+    </div>
+
+    <div class="profile-stats">
+      <div class="profile-stat">
+        <div class="profile-stat-lbl">Deuda total</div>
+        <div class="profile-stat-val ${sinDeuda ? "ok" : "ko"}">
+          ${sinDeuda ? "¡$0!" : "$" + totalDeuda.toLocaleString("es-CL")}
+        </div>
+      </div>
+      <div class="profile-stat">
+        <div class="profile-stat-lbl">Cuotas ${hoy.getFullYear()}</div>
+        <div class="profile-stat-val">${pagadasAño}/${totalAño} <span style="font-size:0.7rem;color:var(--text-muted)">pagadas</span></div>
+      </div>
+    </div>
+
+    ${!sinDeuda ? `<hr class="profile-divider">${detalleRows}
+    <div class="debt-total">
+      <span class="debt-total-lbl">Total pendiente</span>
+      <span class="debt-total-amt">$${totalDeuda.toLocaleString("es-CL")}</span>
+    </div>` : ""}`;
+}
+
+// ── Resumen general de deudores ──────────────────────────────
+function renderResumen() {
+  const panel = document.getElementById("resumen-panel");
+
+  // Construir lista única de nombres desde todas las secciones
+  const nombres = [...new Set(secciones.flatMap(s => s.pagadores.map(p => p.nombre)))];
+
+  const conDeuda = nombres
+    .map(nombre => ({ nombre, ...calcDebt(nombre) }))
+    .filter(p => p.totalDeuda > 0)
+    .sort((a, b) => b.totalDeuda - a.totalDeuda);
+
+  if (!conDeuda.length) {
+    panel.innerHTML = '<div class="no-deudores">✅ ¡Todos al día!</div>';
     return;
   }
 
-  const rows = filas.map(f => `
-    <tr class="row-pend">
-      <td>${f.nombre}</td>
-      <td>${f.fc}</td>
-      <td>${f.año}</td>
-      <td>❌ Pendiente</td>
-    </tr>`).join("");
-
-  panel.innerHTML = `
-    <div class="debt-header">
-      <span class="debt-name">${nombre}</span>
-      <span class="badge debt">Con deuda</span>
-    </div>
-    <table>
-      <thead>
-        <tr><th>Cumpleañero</th><th>Fecha</th><th>Año</th><th></th></tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <div class="total-row">
-      <span class="total-lbl">Total pendiente</span>
-      <span class="total-amt ko">$${totalDeuda.toLocaleString("es-CL")}</span>
-    </div>`;
+  panel.innerHTML = conDeuda.map((p, i) => `
+    <div class="deudor-row">
+      <span class="deudor-rank">${i + 1}</span>
+      <span class="deudor-name">${p.nombre}</span>
+      <span class="deudor-amount">$${p.totalDeuda.toLocaleString("es-CL")}</span>
+    </div>`).join("");
 }
 
+// ── Fetch & load ─────────────────────────────────────────────
 async function loadData() {
   async function tryFetch(url) {
     const res = await fetch(url);
@@ -375,27 +1034,34 @@ async function loadData() {
   }
 
   async function fetchCSV() {
-    // 1° intento: directo
     try { return await tryFetch(PAGOS_CSV_URL); } catch(e) {}
-    // 2° intento: allorigins
     try { return await tryFetch("https://api.allorigins.win/raw?url=" + encodeURIComponent(PAGOS_CSV_URL)); } catch(e) {}
-    // 3° intento: corsproxy
     return await tryFetch("https://corsproxy.io/?" + encodeURIComponent(PAGOS_CSV_URL));
   }
-
-  const banner = document.getElementById("error-banner");
 
   try {
     const text = await fetchCSV();
     parsePagos(text);
 
-    if (cumples.length === 0) {
+    if (cumples.length === 0)
       throw new Error(`Sección del año ${hoy.getFullYear()} no encontrada en el CSV.`);
-    }
 
     renderNext();
     populateSelect();
+    renderResumen();
+
+    // Mostrar contenido con animación escalonada
+    document.getElementById("loading").style.display = "none";
+    const content = document.getElementById("main-content");
+    content.style.display = "block";
+    content.querySelectorAll(".card").forEach((card, i) => {
+      card.style.animationDelay = `${i * 0.07}s`;
+      card.classList.add("animate");
+    });
+
   } catch (err) {
+    document.getElementById("loading").style.display = "none";
+    const banner = document.getElementById("error-banner");
     banner.textContent = "⚠️ " + err.message;
     banner.style.display = "block";
     console.error("Error cargando sheet:", err);
